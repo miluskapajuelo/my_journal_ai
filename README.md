@@ -1,4 +1,6 @@
-# Voice Diary
+# My Journal ai
+
+This project comes after moved to Boston, MA, to study my master's in CS, and I realized that there are so many memories, I do not have time to write them down and it is easy for me to talk and express my daily life, this app is like a friend.
 
 Record a voice note. The browser transcribes it and Claude turns it into a diary entry: bullet points of what happened, places, people and a feeling emoji. The Journal page groups entries by day.
 
