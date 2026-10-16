@@ -48,8 +48,7 @@ You need 3 values: 2 public Supabase values for the browser, and the Anthropic k
 2. **Project URL:** click **Connect** in the top bar of the dashboard, or go to **Project Settings** (gear icon at the bottom of the sidebar), then **Data API**. Copy the URL, which looks like `https://abcdefghij.supabase.co`, into `VITE_SUPABASE_URL`.
 3. **Publishable key:** go to **Project Settings → API Keys** and copy the **Publishable key** (`sb_publishable_...`) into `VITE_SUPABASE_PUBLISHABLE_KEY`.
    - Older projects can use the **anon public** key from the **Legacy API Keys** tab instead.
-   - Never use the **secret** (`sb_secret_...`) or **service_role** key in the app: it skips all security rules. The edge function gets that key automatically, so you never copy it anywhere.
-4. The part between `https://` and `.supabase.co` is your **project ref**. You'll need it in step 4. (It also appears in **Project Settings → General → Project ID**.)
+   - Never use the **secret** (`sb_secret_...`) or **service_role** key in the app: it skips all security rules. 
 
 ### 4. Get the Anthropic key and deploy the edge function
 
@@ -70,7 +69,7 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 supabase functions deploy smart-responder --no-verify-jwt
 ```
 
-### 5. Accounts: you and the hiring-manager demo
+### 5. Accounts: me and the hiring-manager demo
 
 1. **Turn off public sign-ups** **Authentication → Sign In / Providers → Email**, turn off **Allow new users to sign up**, then save.
    - **Hiring managers:
