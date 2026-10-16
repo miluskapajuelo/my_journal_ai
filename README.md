@@ -1,3 +1,7 @@
+For recruiters: 
+Username: demo@myjournalai.com
+Pwd: ABCDEF 
+
 # My Journal ai
 
 This project was inspired by my move to Boston, MA, to pursue my master’s in Computer Science. Since moving, I’ve realized how many memories and experiences I want to capture, but I don’t always have the time or energy to write them down. It’s much easier for me to talk about my day and express my thoughts out loud. I want this app to feel like a friend, someone I can talk to, share my experiences with, and preserve the little moments that make life meaningful.
@@ -49,14 +53,13 @@ You need 3 values: 2 public Supabase values for the browser, and the Anthropic k
 
 ### 4. Get the Anthropic key and deploy the edge function
 
-**Get the key:** [platform.claude.com](https://platform.claude.com), then **API Keys → Create Key**. Add credit under Billing. The key is shown only once, so paste it straight into the next step.
+**Get the key:** [platform.claude.com](https://platform.claude.com),
 
 **Option A: dashboard (no install)**
 
 1. Sidebar → **Edge Functions → Secrets**. Add `ANTHROPIC_API_KEY` with its value.
 2. **Edge Functions → Deploy a new function → Via Editor**. Name it exactly `smart-responder`, paste the content of `supabase/functions/smart-responder/index.ts` and click **Deploy**.
-3. Open the function → **Details** (or Settings) and turn **off** "Verify JWT with legacy secret" (also called "Enforce JWT verification"). The app has no login, so requests carry no user token.
-
+   
 **Option B: Supabase CLI**
 
 ```bash
@@ -69,10 +72,11 @@ supabase functions deploy smart-responder --no-verify-jwt
 
 ### 5. Accounts: you and the hiring-manager demo
 
-1. **Turn off public sign-ups** so nobody else can create accounts and spend your AI credit: **Authentication → Sign In / Providers → Email**, turn off **Allow new users to sign up**, then save.
-2. **Create the two users** in **Authentication → Users → Add user → Create new user**, ticking **Auto Confirm User** each time:
-   - **You:** your email and a password.
-   - **Hiring managers:** email `demo@myjournalai.com` (or another name + `@myjournalai.com`) and a password you share with them. They sign in with just the username (`demo`); the app adds `@myjournalai.com`.
+1. **Turn off public sign-ups** **Authentication → Sign In / Providers → Email**, turn off **Allow new users to sign up**, then save.
+   - **Hiring managers:
+      Username: demo@myjournalai.com
+      Pwd: ABCDEF 
+
 3. Open `supabase/auth.sql`, replace the two emails at the top with these, then paste the file in **SQL Editor** and click **Run**.
 
 The SQL script:
@@ -91,8 +95,4 @@ Open http://localhost:5173 in Chrome, Edge or Safari, allow the microphone and r
 
 **If something fails:** the error appears under the mic button. The function's own logs are under **Edge Functions → smart-responder → Logs**.
 
-## Important
 
-- Only the accounts you create can sign in, as long as sign-ups stay off (step 5).
-- The 2-recording limit is enforced by the database itself (row-level security), not just hidden in the app.
-- Changing the limit means changing `2` in `supabase/auth.sql` (`can_add_entry`) and `DEMO_LIMIT` in `src/lib/supabase.ts`.
