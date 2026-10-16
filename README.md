@@ -1,6 +1,6 @@
 # My Journal ai
 
-This project comes after moving to Boston, MA, to study my master's in CS, and I realized that there are so many memories, I do not have time to write them down and it is easy for me to talk and express my daily life, this app is like a friend.
+This project was inspired by my move to Boston, MA, to pursue my master’s in Computer Science. Since moving, I’ve realized how many memories and experiences I want to capture, but I don’t always have the time or energy to write them down. It’s much easier for me to talk about my day and express my thoughts out loud. I want this app to feel like a friend—someone I can talk to, share my experiences with, and preserve the little moments that make life meaningful.
 
 Record a voice note. The browser transcribes it and Claude turns it into a diary entry: bullet points of what happened, places, people and a feeling emoji. The Journal page groups entries by day.
 
