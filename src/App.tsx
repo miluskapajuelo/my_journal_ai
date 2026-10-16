@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { isSupabaseConfigured } from './lib/supabase'
+import { getSession, isSupabaseConfigured, onSessionChange, refreshUser, signOut } from './lib/supabase'
 import { Journal } from './pages/Journal'
+import { Login } from './pages/Login'
 import { Record } from './pages/Record'
 
 function useHash() {
@@ -15,6 +16,36 @@ function useHash() {
 
 function App() {
   const page = useHash() === '#/journal' ? 'journal' : 'record'
+  const [session, setSession] = useState(getSession)
+  useEffect(() => {
+    onSessionChange(setSession)
+    refreshUser().catch(() => {})
+  }, [])
+
+  if (!isSupabaseConfigured) {
+    return (
+      <main>
+        <div className="card warning">
+          <p><strong>Supabase is not connected.</strong></p>
+          <p>
+            Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> to{' '}
+            <code>.env</code>, then restart <code>npm run dev</code>.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
+  if (!session) {
+    return (
+      <main>
+        <nav><span className="brand">Voice Diary</span></nav>
+        <Login />
+      </main>
+    )
+  }
+
+  const demo = Boolean(session.user.app_metadata?.demo)
 
   return (
     <main>
@@ -22,19 +53,13 @@ function App() {
         <span className="brand">Voice Diary</span>
         <a href="#/" className={page === 'record' ? 'active' : ''}>Record</a>
         <a href="#/journal" className={page === 'journal' ? 'active' : ''}>Journal</a>
+        <button className="ghost" onClick={signOut}>Sign out</button>
       </nav>
-      {!isSupabaseConfigured ? (
-        <div className="card warning">
-          <p><strong>Supabase is not connected.</strong></p>
-          <p>
-            Copy <code>.env.example</code> to <code>.env.local</code>, add your project URL and
-            publishable key, then restart <code>npm run dev</code>.
-          </p>
-        </div>
-      ) : page === 'record' ? (
-        <Record />
+      {/* key: switching accounts starts each page fresh */}
+      {page === 'record' ? (
+        <Record key={session.user.id} demo={demo} />
       ) : (
-        <Journal />
+        <Journal key={session.user.id} demo={demo} />
       )}
     </main>
   )

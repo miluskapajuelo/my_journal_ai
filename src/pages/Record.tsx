@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { addEntry, processEntry, uploadAudio, type Entry } from '../lib/supabase'
+import { addEntry, countEntries, DEMO_LIMIT, processEntry, uploadAudio, type Entry } from '../lib/supabase'
 import { EntryView } from './Journal'
 
 // Browser speech-to-text (Chrome, Edge, Safari). No extra service needed.
@@ -22,8 +22,9 @@ type Session = {
   active: boolean
 }
 
-export function Record() {
+export function Record({ demo }: { demo: boolean }) {
   const [phase, setPhase] = useState<'idle' | 'recording' | 'saving' | 'processing'>('idle')
+  const [used, setUsed] = useState<number | null>(null)
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'es-ES')
   const [text, setText] = useState('')
   const [interim, setInterim] = useState('')
@@ -31,6 +32,10 @@ export function Record() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<Entry | null>(null)
   const session = useRef<Session | null>(null)
+
+  useEffect(() => {
+    if (demo) countEntries().then(setUsed, () => setUsed(0))
+  }, [demo])
 
   useEffect(() => {
     if (phase !== 'recording') return
@@ -102,9 +107,9 @@ export function Record() {
     setInterim('')
 
     try {
+      // Demo accounts keep only the transcript, never the audio.
       const ext = blob.type.split('/')[1].split(';')[0]
-      const path = `${crypto.randomUUID()}.${ext}`
-      await uploadAudio(path, blob)
+      const path = demo ? null : await uploadAudio(`${crypto.randomUUID()}.${ext}`, blob)
 
       const entry = await addEntry({
         recorded_at: new Date(s.start).toISOString(),
@@ -116,24 +121,43 @@ export function Record() {
         transcript: s.final.trim(),
       })
 
+      setUsed((u) => (u ?? 0) + 1)
       setPhase('processing')
       setResult(await processEntry(entry.id))
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      const message = e instanceof Error ? e.message : String(e)
+      // The database refuses a demo account's 3rd recording: show the demo notice instead.
+      if (demo && message.includes('row-level security')) setUsed(DEMO_LIMIT)
+      else setError(message)
     }
     setPhase('idle')
   }
 
   const busy = phase === 'saving' || phase === 'processing'
+  const left = demo ? DEMO_LIMIT - (used ?? DEMO_LIMIT) : Infinity
   const secs = Math.floor(elapsed / 1000)
 
   return (
     <section>
+      {demo && left <= 0 ? (
+        <div className="card demo limit">
+          <strong>This is a demo account.</strong>
+          <p>
+            You've used your {DEMO_LIMIT} recordings, so recording is now disabled. Your notes are
+            still in the Journal and are deleted automatically after 7 days.
+          </p>
+        </div>
+      ) : demo && (
+        <p className="card demo">
+          Demo account: {used === null ? '…' : `${left} of ${DEMO_LIMIT}`} recordings left.
+          Recordings are deleted after 7 days.
+        </p>
+      )}
       <div className="card center">
         <button
           className={`mic ${phase === 'recording' ? 'on' : ''}`}
           onClick={phase === 'recording' ? stop : start}
-          disabled={busy}
+          disabled={busy || (phase === 'idle' && left <= 0)}
           aria-label={phase === 'recording' ? 'Stop recording' : 'Start recording'}
         >
           <span />
@@ -145,7 +169,9 @@ export function Record() {
               ? 'Saving…'
               : phase === 'processing'
                 ? 'Understanding your day…'
-                : 'Tap to record'}
+                : left <= 0
+                  ? 'Demo limit reached'
+                  : 'Tap to record'}
         </p>
         <select
           value={lang}

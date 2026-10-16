@@ -65,7 +65,20 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 supabase functions deploy smart-responder --no-verify-jwt
 ```
 
-### 5. Run
+### 5. Accounts: you and the hiring-manager demo
+
+1. **Turn off public sign-ups** so nobody else can create accounts and spend your AI credit: **Authentication → Sign In / Providers → Email**, turn off **Allow new users to sign up**, then save.
+2. **Create the two users** in **Authentication → Users → Add user → Create new user**, ticking **Auto Confirm User** each time:
+   - **You:** your email and a password.
+   - **Hiring managers:** email `demo@myjournalai.com` (or another name + `@myjournalai.com`) and a password you share with them. They sign in with just the username (`demo`); the app adds `@myjournalai.com`.
+3. Open `supabase/auth.sql`, replace the two emails at the top with these, then paste the file in **SQL Editor** and click **Run**.
+
+The SQL script:
+- links every recording to its user, so each account only sees its own (existing recordings go to you);
+- marks the demo account: at most **2 recordings at a time**, and no audio is stored for it, only the transcript and the AI results;
+- schedules an hourly job (`pg_cron`) that deletes demo recordings older than **7 days**, which also frees up their 2 slots.
+
+### 6. Run
 
 ```bash
 npm install
@@ -78,4 +91,6 @@ Open http://localhost:5173 in Chrome, Edge or Safari, allow the microphone and r
 
 ## Important
 
-There is no login. Anyone with the URL and the publishable key can read your entries, add new ones and run the AI step (which costs you API credit). Before you put it online, add Supabase Auth and limit the policies to `auth.uid()`.
+- Only the accounts you create can sign in, as long as sign-ups stay off (step 5).
+- The 2-recording limit is enforced by the database itself (row-level security), not just hidden in the app.
+- Changing the limit means changing `2` in `supabase/auth.sql` (`can_add_entry`) and `DEMO_LIMIT` in `src/lib/supabase.ts`.

@@ -47,11 +47,17 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
+  // Only signed-in users, and only for their own entries.
+  const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
+  const { data: auth } = await db.auth.getUser(token)
+  if (!auth.user) return json({ error: 'Not signed in' }, 401)
+
   const { id } = await req.json()
   const { data: entry } = await db
     .from('entries')
     .select('id, transcript, recorded_at')
     .eq('id', id)
+    .eq('user_id', auth.user.id)
     .neq('status', 'done')
     .single()
   if (!entry) return json({ error: 'Entry not found or already processed' }, 404)

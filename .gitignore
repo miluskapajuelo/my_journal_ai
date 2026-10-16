@@ -25,6 +25,8 @@ dist-ssr
 *.sw?
 
 schema.sql
+auth.sql
+functions/*
 
 # Supabase CLI
 supabase/.temp

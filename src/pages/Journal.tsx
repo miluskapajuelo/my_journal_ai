@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listEntries, processEntry, type Entry } from '../lib/supabase'
+import { deleteEntry, listEntries, processEntry, type Entry } from '../lib/supabase'
 
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
@@ -11,7 +11,10 @@ const dayTitle = (iso: string) =>
 
 const unique = (lists: (string[] | null)[]) => [...new Set(lists.flatMap((l) => l ?? []))]
 
-export function EntryView({ entry, onRetry }: { entry: Entry; onRetry?: () => void }) {
+type EntryProps = { entry: Entry; onRetry?: () => void; onDelete?: () => void }
+
+export function EntryView({ entry, onRetry, onDelete }: EntryProps) {
+  const [confirming, setConfirming] = useState(false)
   return (
     <div className="entry">
       <div className="entry-head">
@@ -21,6 +24,16 @@ export function EntryView({ entry, onRetry }: { entry: Entry; onRetry?: () => vo
             {entry.feeling_emoji} <small>{entry.feeling_label}</small>
           </span>
         )}
+        {onDelete && (confirming ? (
+          <span className="confirm">
+            <button className="delete danger" onClick={onDelete}>Delete</button>
+            <button className="delete" onClick={() => setConfirming(false)}>Cancel</button>
+          </span>
+        ) : (
+          <button className="delete" onClick={() => setConfirming(true)} aria-label="Delete recording" title="Delete">
+            ✕
+          </button>
+        ))}
       </div>
       {entry.status === 'pending' && <p className="muted">Processing…</p>}
       {entry.status === 'error' && (
@@ -54,10 +67,11 @@ function Chips({ icon, items }: { icon: string; items: string[] }) {
   )
 }
 
-export function Journal() {
+export function Journal({ demo }: { demo: boolean }) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     let ignore = false
@@ -82,6 +96,16 @@ export function Journal() {
     setEntries((prev) => prev.map((e) => (e.id === id ? next : e)))
   }
 
+  async function remove(entry: Entry) {
+    setActionError(null)
+    try {
+      await deleteEntry(entry)
+      setEntries((prev) => prev.filter((e) => e.id !== entry.id))
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
   if (loading) return <p className="muted">Loading…</p>
   if (error) return <p className="error">Error: {error}</p>
   if (!entries.length) return <p className="muted">No recordings yet. Go record your first note.</p>
@@ -94,6 +118,7 @@ export function Journal() {
 
   return (
     <section>
+      {actionError && <p className="error">Error: {actionError}</p>}
       {[...days.values()].map((list) => {
         const chronological = [...list].reverse()
         return (
@@ -105,7 +130,12 @@ export function Journal() {
             <Chips icon="📍" items={unique(list.map((e) => e.places))} />
             <Chips icon="👥" items={unique(list.map((e) => e.people))} />
             {chronological.map((e) => (
-              <EntryView key={e.id} entry={e} onRetry={() => retry(e.id)} />
+              <EntryView
+                key={e.id}
+                entry={e}
+                onRetry={() => retry(e.id)}
+                onDelete={demo ? undefined : () => remove(e)}
+              />
             ))}
           </article>
         )
